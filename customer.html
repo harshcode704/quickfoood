@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>QuickEats - Customer</title>
+  <style>
+    :root {
+      --primary: #ff2e63;
+      --secondary: #08d9d6;
+      --bg: #fefefe;
+      --text: #222;
+      --radius: 12px;
+    }
+    * {
+      box-sizing: border-box;
+      transition: 0.3s ease;
+    }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: row;
+    }
+    .sidebar {
+      width: 220px;
+      background: var(--primary);
+      color: white;
+      height: 100vh;
+      padding: 1.5rem;
+      position: fixed;
+      top: 0;
+      left: 0;
+    }
+    .sidebar h2 {
+      margin-top: 0;
+    }
+    .sidebar a {
+      display: block;
+      color: white;
+      margin: 1rem 0;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .main {
+      margin-left: 220px;
+      padding: 2rem;
+      flex: 1;
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    h1 {
+      margin-top: 0;
+      color: var(--primary);
+    }
+    .products {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+    }
+    .product {
+      background: white;
+      padding: 1rem;
+      border-radius: var(--radius);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      width: calc(50% - 1rem);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .product img {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      margin-bottom: 1rem;
+      object-fit: cover;
+    }
+    .product h3 {
+      margin: 0.5rem 0;
+    }
+    .btn {
+      background: var(--secondary);
+      color: white;
+      padding: 0.6rem 1.2rem;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .cart, .payment, .history {
+      margin-top: 2rem;
+    }
+    .cart-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+    }
+    @keyframes fadeIn {
+      from {opacity: 0; transform: translateY(20px);}
+      to {opacity: 1; transform: translateY(0);}
+    }
+    @media (max-width: 768px) {
+      body {
+        flex-direction: column;
+      }
+      .sidebar {
+        width: 100%;
+        height: auto;
+        position: static;
+        display: flex;
+        justify-content: space-around;
+      }
+      .main {
+        margin-left: 0;
+      }
+      .product {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <h2>QuickEats</h2>
+    <a onclick="showSection('menu')">Menu</a>
+    <a onclick="showSection('cart')">Cart</a>
+    <a onclick="showSection('payment')">Payment</a>
+    <a onclick="showSection('history')">Order History</a>
+    <a onclick="logout()">Logout</a>
+  </div>
+
+  <div class="main">
+    <div id="menu-section">
+      <h1>Menu</h1>
+      <div class="products" id="product-list"></div>
+    </div>
+
+    <div id="cart-section" style="display:none">
+      <h1>Your Cart</h1>
+      <div id="cart-items"></div>
+      <h3>Total: ₹<span id="total">0</span></h3>
+    </div>
+
+    <div id="payment-section" style="display:none">
+      <h1>Payment</h1>
+      <input type="text" id="name" placeholder="Your Name" style="width:100%;padding:10px;margin-bottom:10px" />
+      <input type="text" id="card" placeholder="Card Number" style="width:100%;padding:10px;margin-bottom:10px" />
+      <button class="btn" onclick="payNow()">Pay ₹<span id="pay-total">0</span></button>
+    </div>
+
+    <div id="history-section" style="display:none">
+      <h1>Order History</h1>
+      <div id="history-list"></div>
+    </div>
+  </div>
+
+  <script>
+    const products = [
+      { name: "Burger", price: 80, image: "https://i.imgur.com/5cX1bR3.png" },
+      { name: "Pizza", price: 150, image: "https://i.imgur.com/WCzJDWz.png" },
+      { name: "Fries", price: 60, image: "https://i.imgur.com/zK56Ll3.png" },
+      { name: "Coke", price: 40, image: "https://i.imgur.com/H9eKphF.png" },
+    ];
+    let cart = [];
+
+    window.onload = () => {
+      const list = document.getElementById("product-list");
+      products.forEach(p => {
+        const div = document.createElement("div");
+        div.className = "product";
+        div.innerHTML = `
+          <img src="${p.image}" />
+          <h3>${p.name}</h3>
+          <p>₹${p.price}</p>
+          <button class="btn" onclick="addToCart('${p.name}', ${p.price})">Add to Cart</button>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    function showSection(id) {
+      document.getElementById("menu-section").style.display = "none";
+      document.getElementById("cart-section").style.display = "none";
+      document.getElementById("payment-section").style.display = "none";
+      document.getElementById("history-section").style.display = "none";
+      document.getElementById(`${id}-section`).style.display = "block";
+      if (id === 'cart') updateCart();
+      if (id === 'payment') document.getElementById('pay-total').innerText = getTotal();
+      if (id === 'history') showHistory();
+    }
+
+    function addToCart(name, price) {
+      cart.push({ name, price });
+      alert(`${name} added to cart!`);
+    }
+
+    function updateCart() {
+      const list = document.getElementById("cart-items");
+      list.innerHTML = '';
+      let total = 0;
+      cart.forEach(item => {
+        total += item.price;
+        const div = document.createElement("div");
+        div.className = "cart-item";
+        div.innerHTML = `${item.name} - ₹${item.price}`;
+        list.appendChild(div);
+      });
+      document.getElementById("total").innerText = total;
+    }
+
+    function getTotal() {
+      return cart.reduce((sum, item) => sum + item.price, 0);
+    }
+
+    function payNow() {
+      const name = document.getElementById("name").value;
+      const card = document.getElementById("card").value;
+      if (!name || !card) {
+        alert("Please fill all payment fields.");
+        return;
+      }
+      const history = JSON.parse(localStorage.getItem("orderHistory") || "[]");
+      history.push({
+        date: new Date().toLocaleString(),
+        items: cart,
+        total: getTotal()
+      });
+      localStorage.setItem("orderHistory", JSON.stringify(history));
+      alert("Payment Successful! Order Placed.");
+      cart = [];
+      showSection('menu');
+    }
+
+    function showHistory() {
+      const list = document.getElementById("history-list");
+      list.innerHTML = '';
+      const history = JSON.parse(localStorage.getItem("orderHistory") || "[]");
+      history.forEach(h => {
+        const div = document.createElement("div");
+        div.style.marginBottom = '1rem';
+        div.innerHTML = `
+          <strong>Date:</strong> ${h.date}<br>
+          <strong>Items:</strong>
+          <ul>${h.items.map(i => `<li>${i.name} - ₹${i.price}</li>`).join('')}</ul>
+          <strong>Total:</strong> ₹${h.total}
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    function logout() {
+      localStorage.removeItem('loggedInUser');
+      window.location.href = 'index.html';
+    }
+  </script>
+</body>
+</html>

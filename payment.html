@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>QuickEats - Payment</title>
+  <link rel="icon" href="icons/icon-192.png" type="image/png">
+  <style>
+    :root {
+      --primary: #ff2e63;
+      --accent: #08d9d6;
+      --bg: #fefefe;
+      --text: #333;
+      --radius: 12px;
+      --shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', sans-serif;
+      transition: all 0.3s ease;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .app {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      width: 240px;
+      background: var(--primary);
+      color: white;
+      padding: 1.5rem;
+      position: fixed;
+      height: 100%;
+    }
+
+    .sidebar h2 {
+      margin-bottom: 2rem;
+    }
+
+    .sidebar nav a {
+      display: block;
+      color: white;
+      text-decoration: none;
+      margin-bottom: 1rem;
+      padding: 0.6rem 0.8rem;
+      border-radius: var(--radius);
+    }
+
+    .sidebar nav a:hover,
+    .sidebar nav a.active {
+      background: white;
+      color: var(--primary);
+      transform: scale(1.05);
+    }
+
+    .main-content {
+      margin-left: 240px;
+      padding: 2rem;
+      width: 100%;
+    }
+
+    h1 {
+      margin-bottom: 1.5rem;
+    }
+
+    form {
+      background: white;
+      padding: 2rem;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      max-width: 500px;
+      animation: fadeIn 0.5s ease;
+    }
+
+    .form-group {
+      margin-bottom: 1.2rem;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+
+    input {
+      width: 100%;
+      padding: 0.6rem;
+      border-radius: var(--radius);
+      border: 1px solid #ccc;
+    }
+
+    .btn {
+      background: var(--accent);
+      color: white;
+      padding: 0.6rem 1.2rem;
+      border: none;
+      border-radius: var(--radius);
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn:hover {
+      background: #06bcb8;
+    }
+
+    .summary {
+      margin-top: 2rem;
+      background: white;
+      padding: 1.5rem;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      max-width: 500px;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 768px) {
+      .sidebar {
+        width: 100%;
+        height: auto;
+        position: static;
+        display: flex;
+        justify-content: space-around;
+        padding: 1rem;
+      }
+
+      .main-content {
+        margin-left: 0;
+        padding: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <h2>QuickEats</h2>
+      <nav>
+        <a href="index.html">Home</a>
+        <a href="menu.html">Menu</a>
+        <a href="cart.html">Cart</a>
+        <a href="payment.html" class="active">Payment</a>
+        <a href="history.html">Orders</a>
+      </nav>
+    </aside>
+
+    <main class="main-content">
+      <h1>Payment</h1>
+      <form id="payment-form">
+        <div class="form-group">
+          <label for="name">Full Name</label>
+          <input type="text" id="name" required />
+        </div>
+        <div class="form-group">
+          <label for="card">Card Number</label>
+          <input type="text" id="card" maxlength="16" required />
+        </div>
+        <div class="form-group">
+          <label for="expiry">Expiry (MM/YY)</label>
+          <input type="text" id="expiry" required />
+        </div>
+        <div class="form-group">
+          <label for="cvv">CVV</label>
+          <input type="password" id="cvv" maxlength="3" required />
+        </div>
+        <button class="btn" type="submit">Pay Now</button>
+      </form>
+
+      <div class="summary" id="order-summary">
+        <!-- JS will load order summary here -->
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const form = document.getElementById('payment-form');
+    const summary = document.getElementById('order-summary');
+    const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+
+    function displaySummary() {
+      let total = cart.reduce((acc, item) => acc + item.price * item.qty, 0);
+      summary.innerHTML = `
+        <h3>Order Summary</h3>
+        <ul>
+          ${cart.map(item => `<li>${item.name} x ${item.qty} - ₹${item.price * item.qty}</li>`).join('')}
+        </ul>
+        <strong>Total: ₹${total}</strong>
+      `;
+    }
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      alert('Payment Successful!');
+      const history = JSON.parse(localStorage.getItem('orderHistory') || '[]');
+      history.push({
+        items: cart,
+        date: new Date().toLocaleString()
+      });
+      localStorage.setItem('orderHistory', JSON.stringify(history));
+      localStorage.removeItem('cart');
+      window.location.href = 'history.html';
+    });
+
+    displaySummary();
+  </script>
+</body>
+</html>
